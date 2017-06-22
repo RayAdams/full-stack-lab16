@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chirper</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+
+    <div class="jumbotron">
+        <div class="row">
+            <h1><i class="fa fa-twitter" aria-hidden="true"></i>Welcome to Chirper</h1>
+        </div>
+        
+    <div>
+        <select id="user-selector" class="btn-info">
+                <option value="0">User:</option>
+                <option value="1">Coke</option>
+                <option value="2">Pepsi</option>
+                <option value="3">Dr. Pepper</option>
+        </select>
+    </div>
+
+    <form>
+        <div class="row">
+            <div class="col-sm-6 text">
+                <input type="text" id='chirp-field' class="form-control text" placeholder="Update Status">
+            </div>
+            <div class="col-xs-2">
+                <button id='chirp-btn' disabled class="btn btn-info btn-lg" type='submit'>Chirp!</button>
+            </div>
+        </div>
+    </form>
+    </div>
+
+    <div class="container">
+        <h3>Your Top Chirps:</h3>
+        <div class="container tweet-area" id="chirp-list">
+        </div>
+    </div>
+
+    <div class="container footer">
+        <form action='http://localhost:3000/api/chirps' method='GET'>
+        <div class="col-xs-2">
+                <button id='pageBtn' class="btn btn-primary btn-xs" type='submit'>See Dirty Chirps</button>
+        </div>
+        </form>
+    </div>
+<script
+  src="http://code.jquery.com/jquery-3.2.1.js"
+  integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
+  crossorigin="anonymous"></script>
+  <script src="frontIndex.js"></script>
+    </body>
+</html>
