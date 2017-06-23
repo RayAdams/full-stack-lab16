@@ -1,5 +1,4 @@
 var path = require('path');
-var fs = require('fs');
 var express = require('express');
 var bodyParser = require('body-parser');
 var mysql = require('mysql');
@@ -20,115 +19,90 @@ app.use(bodyParser.json());
 
 //GET ALL
 app.get('/api/chirps', function(req, res){
-    getChirps()
+    rows('GetChirps')
     .then(function(chirps) {
-        res.status(200).send(chirps);
-    }, function(err) {
+        res.send(chirps);
+    }).catch(function(err) {
         console.log(err);
         res.sendStatus(500);
     });
 });
 
 //GET ONE
-app.get('/api/chirp/:id', function(req, res){
-    getChirp(req.params.id)
+app.get('/api/chirps/:id', function(req, res){
+    row('GetChirp', [req.params.id])
     .then(function(chirp) {
-        res.status(200).send(chirp);
-    }, function(err) {
+        res.send(chirp);
+    }).catch(function(err) {
         console.log(err);
         res.sendStatus(500);
     });
 });
 
-//POST/CREATE NEW ONE
-app.post('/api/chirps', function(req,res){
-   insertChirp(req.body.user, req.body.message)
+//CREATE & POST NEW ONE
+app.post('/api/chirps/:id', function(req,res) {
+   row('InsertChirp',[req.body.user, req.body.message])
     .then(function(id) {
         res.status(201).send(id);
-    }, function(err) {
+    }).catch(function(err) {
         console.log(err);
         res.sendStatus(500);
     });
 });
 
 //UPDATE ONE
-app.put('/api/chirps', function(req, res){
-    updateChirp(req.body.message, req.body.id)
-    .then(function(){
+app.put('/api/chirps/:id', function(req, res) {
+    empty('UpdateChirp', [req.body.message, req.params.id])
+    .then(function() {
         res.sendStatus(204);
+    }).catch(function(err) {
+        console.log(err);
+        res.sendStatus(500);
     });
 });
 
 //DELETE ONE
-app.delete('/api/chirps', function(req, res){
-    deleteChirp(req.body.id)
-    .then(function(){
+app.delete('/api/chirps/:id', function(req, res) {
+    empty('DeleteChirp', [req.params.id])
+    .then(function() {
         res.sendStatus(204);
+    }).catch(function(err) {
+        console.log(err);
+        res.sendStatus(500);
     });
 });
 
 //server port
 app.listen(3000);
 
-//GET ALL FUNC
-function getChirps() {
-    return new Promise(function(resolve, reject) {
-        pool.getConnection(function(err, connection) {
-            if(err) {
-                reject(err);
-            }
-            else {
-                connection.query('CALL GetChirps();', function(err, resultsets) {
-                    connection.release();
-                    if(err){
-                        reject(err);
-                    }
-                    else {
-                        resolve(resultsets[0]);
-                    }
-                });
-            }
-        });
-    });
-}
+//-------------general functions----------------- 
 
-//GET ONE FUNC
-function getChirp(id) {
-    return new Promise(function(resolve, reject) {
-        pool.getConnection(function(err, connection) {
-            if(err) {
-                reject(err);
-            }
-            else {
-                connection.query('CALL GetChirp(?);', [id], function(err, resultsets) {
-                    connection.release();
-                    if(err){
-                        reject(err);
-                    }
-                    else {
-                        resolve(resultsets[0][0]);
-                    }
-                });
-            }
-        });
-    });
-}
 
-//ADD ONE FUNC
-function insertChirp(user, message) {
-    return new Promise(function(resolve, reject) {
+function callProcedure(procedureName, args) {
+    return new Promise (function(resolve,reject) {
         pool.getConnection(function(err, connection) {
             if (err) {
                 reject(err);
             }
             else {
-                connection.query('CALL InsertChirp(?,?);', [user, message], function(err, resultsets) {
-                    connection.release();
-                    if (err){
+                placeholders = '';
+                if (args && args.length > 0) {
+                    for (var i = 0; i < args.length; i++) {
+                        if (i === args.length -1) {
+                            placeholders += '?';
+                        }
+                        else {
+                            placeholders += '?,';
+                        }
+                    }
+                }
+                var callString = 'CALL ' + procedureName + '(' + placeholders + ');';
+                connection.query(callString, args, function(err, resultsets) {
+                    if (err) {
                         reject(err);
                     }
                     else {
-                        resolve(resultsets[0][0]);
+                        resolve(resultsets);
                     }
                 });
             }
@@ -136,46 +110,24 @@ function insertChirp(user, message) {
     });
 }
 
-//UPDATE ONE MESSAGE FUNC
-function updateChirp(message, id) {
-    return new Promise(function(resolve, reject) {
-        pool.getConnection(function(err, connection) {
-            if (err) {
-                reject(err);
-            }
-            else {
-                connection.query('CALL UpdateChirp(?);', [message, id], function(err, resultsets) {
-                    connection.release();
-                    if (err){
-                        reject(err);
-                    }
-                    else {
-                        resolve();
-                    }
-                });
-            }
+function rows(procedureName, args) {
+    return callProcedure(procedureName, args)
+        .then(function(resultsets) {
+            return resultsets[0];
         });
-    });
 }
 
-//DELETE ONE FUNC
-function deleteChirp(id) {
-    return new Promise(function(resolve, reject) {
-        pool.getConnection(function(err, connection) {
-            if (err) {
-                reject(err);
-            }
-            else {
-                connection.query('CALL DeleteChirp(?);', [id], function(err, resultsets) {
-                    connection.release();
-                    if (err){
-                        reject(err);
-                    }
-                    else {
-                        resolve();
-                    }
-                });
-            }
+function row(procedureName, args) {
+    return callProcedure(procedureName, args)
+        .then(function(resultsets){
+            return resultsets[0][0];
         });
-    });
+}
+
+//use for update and delete
+function empty(procedureName, args) {
+    return callProcedure(procedureName, args)
+        .then(function() {
+            return;
+        });
 }
